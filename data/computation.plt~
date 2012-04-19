@@ -1,0 +1,7 @@
+set contour
+unset surface
+set cntrparam levels incremental 0, 0.5, 5.5
+set term table
+# set out "computationPlot.out"
+splot "computation.out" using 1:2:3 with lines
+# set out
