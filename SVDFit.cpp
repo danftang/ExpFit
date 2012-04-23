@@ -19,7 +19,6 @@ SVDFit::SVDFit(int m) {
 SVDFit::Real SVDFit::mu_approx(int j) {
   int 	m;
   Real 	y = 0.0;
-
   for(m = 0; m < A.size(); ++m) {
     y += A(m)*(pow(k(m),j) - pow(k(m),mu.size()-1-j));
   }
