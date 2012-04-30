@@ -19,7 +19,8 @@ int main() {
 
   // --- do fit
   // ----------
-  AntisymmetricExpFit		myFit(data);
+  bool 			provable = true; // set to false for alternative method 
+  AntisymmetricExpFit	myFit(data, provable);
   myFit.fit(1e-5);
 
   // --- print out result

@@ -12,9 +12,12 @@ using namespace std;
 // The point of antisymmetry lies at y.size()-0.5
 // y.size() should be even
 //
+// if 'p' is true, use the provable method of solving
+// otherwise use the alternative method. See paper for details.
+//
 ///////////////////////////////////////////////////////////////////////////////
-AntisymmetricExpFit::AntisymmetricExpFit(const vector<double> &y) {
-  set_data(y);
+AntisymmetricExpFit::AntisymmetricExpFit(const vector<double> &y, bool p) {
+  set_data(y,p);
 }
 
 
@@ -46,10 +49,14 @@ void AntisymmetricExpFit::fit(double max_error) {
 // The point of antisymmetry lies at y.size()-0.5
 // y.size() should be even
 //
+// if 'p' is true, use the provable method of solving
+// otherwise use the alternative method. See paper for details.
+//
 ///////////////////////////////////////////////////////////////////////////////
-void AntisymmetricExpFit::set_data(const vector<double> &y) {
+void AntisymmetricExpFit::set_data(const vector<double> &y, bool p) {
   int i,j;
   int N = 2*y.size();
+  provable = p;
 
   // --- set mu to exact values
   // --------------------------
@@ -72,7 +79,11 @@ void AntisymmetricExpFit::set_data(const vector<double> &y) {
   H.resize(N/4,N/4);
   for(i = 0; i < N/4; ++i) {
     for(j = 0; j < N/4; ++j) {
-      H(i,j) = musum(i+j) - musum(i+N/2-j);
+      if(provable) {
+	H(i,j) = musum(i+j) - musum(i+N/2-j);
+      } else {
+	H(i,j) = mu(i+j) + mu(i+N/2-1-j);
+      }
     }
   }
   decompose();
@@ -187,16 +198,22 @@ void AntisymmetricExpFit::fit_exponents(int c) {
   // --- Construct the eigenpolynomial
   // --- from the eigenvalues
   // ---------------------------------
-  RealVector PA(N+1);	// eigen polynomial coefficients
   RealVector P(N);	// eigen polynomial coefficients
-  PA(N/2) = 0.0;
-  PA.topRows(N/2) = ESolver.eigenvectors().col(c).real();
-  PA.bottomRows(N/2) = -ESolver.eigenvectors().col(c).real().reverse();
 
-  // --- P = PA/(1-x)
-  P(0) = PA(0);
-  for(i = 1; i<P.size(); ++i) {
-    P(i) = P(i-1) + PA(i);
+  if(provable) {
+    // --- PA = P_q(x) - x^{N/2} P_q(x^{-1})
+    // --- P = PA/(1-x)
+    RealVector PA(N+1);	// eigen polynomial coefficients
+    PA(N/2) = 0.0;
+    PA.topRows(N/2) = ESolver.eigenvectors().col(c).real();
+    PA.bottomRows(N/2) = -ESolver.eigenvectors().col(c).real().reverse();
+    P(0) = PA(0);
+    for(i = 1; i<P.size(); ++i) {
+      P(i) = P(i-1) + PA(i);
+    }
+  } else {
+    P.topRows(N/2) = ESolver.eigenvectors().col(c).real();
+    P.bottomRows(N/2) = ESolver.eigenvectors().col(c).real().reverse();
   }
 
   RealVector Q;		// eigenpolynomial with changed variable

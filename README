@@ -5,7 +5,7 @@ to an antisymmetric function
 by
 Dan F. Tang
 
-* Two methods are described in the accompanying paper (interpolation.pdf). The code for the first method is here, the coded for the second method will be added very soon.
+* The algorithm is described in the accompanying paper (interpolation.pdf).
 
 * More documentation coming soon, along with ready made fits to the cot function!
 
@@ -13,6 +13,6 @@ Dan F. Tang
 
 * Use the code by creating a std::vector<double> containing one half of the antisymmetric function you want to fit, create and instance of an AntisymmetricExpFit, using the vector to construct the instance. The fit itself can be performed by calling AntisymmetricExpFit::fit(e) where e is the acceptable error in the approximant.
 
-The resulting appsoximant can be read off from member vectors 'k' and 'A'.
+The resulting approximant can be read off from member vectors 'k' and 'A'.
 
-* Thanks to the CICADA research group at Manchester University Institute of Mathematics for funding this research.
+* Thanks to the CICADA research group at the department of Mathematics at Manchester University for funding this research.
