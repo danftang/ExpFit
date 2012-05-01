@@ -1,3 +1,21 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+/// \author Daniel Tang
+// Copyright (c) 2012 Daniel Tang.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing,
+//   software distributed under the License is distributed on an "AS
+//   IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+//   express or implied.  See the License for the specific language
+//   governing permissions and limitations under the License.
+//
+///////////////////////////////////////////////////////////////////////////////
 #include <Eigen/Eigenvalues>
 #include <Eigen/SVD>
 #include "AntisymmetricExpFit.h"
@@ -8,12 +26,17 @@ using namespace std;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// y = half of the data we wish to find an antisymmetric fit of.
-// The point of antisymmetry lies at y.size()-0.5
-// y.size() should be even
-//
-// if 'p' is true, use the provable method of solving
-// otherwise use the alternative method. See paper for details.
+/// \fn AntisymmetricExpFit::AntisymmetricExpFit(const std::vector<double> &y, bool p)
+/// Constructs an instance of AsymmetricExpFit, forms the Hankel matrix
+/// and solves for the eigenvectors.
+///
+/// \param y Half of the data we wish to find an antisymmetric fit of.
+/// The point of antisymmetry lies at y.size()-0.5. y.size() should be
+/// even.
+///
+/// \param p if true, the provable method of solving is used,
+/// otherwise the alternative method is used. See accompanying paper for
+/// further details.
 //
 ///////////////////////////////////////////////////////////////////////////////
 AntisymmetricExpFit::AntisymmetricExpFit(const vector<double> &y, bool p) {
@@ -23,34 +46,49 @@ AntisymmetricExpFit::AntisymmetricExpFit(const vector<double> &y, bool p) {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Fits an exponential sum to the data, whose error is bounded by 2*max_error
+/// Fits an exponential sum to the data in the Hankel matrix, H,
+/// whose error is bounded by max_error
 //
 ///////////////////////////////////////////////////////////////////////////////
 void AntisymmetricExpFit::fit(double max_error) {
-  const int			N = (mu.size()+1)/2;
-  int				i,j;
+  int j;
 
-  // --- Calc SVD and identify eigenvector of
-  // --- first singular value below max_error
-  // ----------------------------------------
+  // --- Identify eigenvector of
+  // --- first eigenvalue below max_error
+  // ------------------------------------
   j = 0;
   while(ESolver.eigenvalues().size()-1 > j && 
-	fabs(ESolver.eigenvalues()(j).real()) > max_error) {
+	fabs(ESolver.eigenvalues()(j).real()) > max_error/2.0) {
     ++j;
   }
-  fit_exponents(j);
+  fit(j);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+/// Fits an exponential sum with 'n' terms to the data in the Hankel
+/// matrix, H.
+//
+///////////////////////////////////////////////////////////////////////////////
+void AntisymmetricExpFit::fit(int n) {
+  fit_exponents(n);
   if(k.size() > 0) fit_amplitudes();
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Sets the data to fit. y = half of the data to fit. 
-// The point of antisymmetry lies at y.size()-0.5
-// y.size() should be even
-//
-// if 'p' is true, use the provable method of solving
-// otherwise use the alternative method. See paper for details.
+/// \fn void AntisymmetricExpFit::set_data(const std::vector<double> &y, bool p)
+/// Used to define the data points we wish to fit the approximant to
+/// (if different from that sent to the constructor).
+///
+/// \param y Half of the data to fit. The point of antisymmetry lies
+/// at y.size()-0.5. y.size() should be even
+///
+/// \param p if true, the provable method of solving is used,
+/// otherwise the alternative method is used. See accompanying paper for
+/// further details.
 //
 ///////////////////////////////////////////////////////////////////////////////
 void AntisymmetricExpFit::set_data(const vector<double> &y, bool p) {
@@ -92,7 +130,7 @@ void AntisymmetricExpFit::set_data(const vector<double> &y, bool p) {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Returns the value of the approximant at the j'th point.
+/// returns the value of the approximant at the j'th point.
 //
 ///////////////////////////////////////////////////////////////////////////////
 AntisymmetricExpFit::Real AntisymmetricExpFit::mu_approx(int j) {
@@ -109,7 +147,7 @@ AntisymmetricExpFit::Real AntisymmetricExpFit::mu_approx(int j) {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// returns the 2-norm error of the approximant
+/// returns the 2-norm error of the approximant
 //
 ///////////////////////////////////////////////////////////////////////////////
 AntisymmetricExpFit::Real AntisymmetricExpFit::two_norm() {
@@ -125,6 +163,9 @@ AntisymmetricExpFit::Real AntisymmetricExpFit::two_norm() {
 
 
 ///////////////////////////////////////////////////////////////////////////////
+//
+/// returns the approximant minus the exact value at point \b i
+//
 ///////////////////////////////////////////////////////////////////////////////
 AntisymmetricExpFit::Real AntisymmetricExpFit::residual(int i) {
     return(mu_approx(i) - mu(i));
@@ -133,8 +174,7 @@ AntisymmetricExpFit::Real AntisymmetricExpFit::residual(int i) {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// compare error between approximant and 
-// tan(PI/4N)/tan(x) for x = (0.5+i)PI/2N
+/// returns the 1-norm error of the approximant
 //
 ///////////////////////////////////////////////////////////////////////////////
 AntisymmetricExpFit::Real AntisymmetricExpFit::one_norm() {
@@ -151,7 +191,7 @@ AntisymmetricExpFit::Real AntisymmetricExpFit::one_norm() {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Prints out the values of the approximant against the data
+/// Prints out the values of the approximant against the data
 //
 ///////////////////////////////////////////////////////////////////////////////
 void AntisymmetricExpFit::print() {
@@ -169,7 +209,7 @@ void AntisymmetricExpFit::print() {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Prints the exponential sum approximant
+/// Prints the approximant to standard out
 //
 ///////////////////////////////////////////////////////////////////////////////
 void AntisymmetricExpFit::print_approximant() {
@@ -188,7 +228,11 @@ void AntisymmetricExpFit::print_approximant() {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Find zeroes of the polynomial y = sum_i c(i)x^i and put them in X
+/// Find zeroes of the polynomial \f$y = sum_i e_ix^i\f$,
+/// where \f$e\f$ is the \f$c^{th}\f$ eigenvector, and put any zeroes
+/// that lie in the interval [0:1] into \c k.
+///
+/// \param c The identifier of the eigenvector to find zeroes of.
 //
 ///////////////////////////////////////////////////////////////////////////////
 void AntisymmetricExpFit::fit_exponents(int c) {
@@ -249,8 +293,8 @@ void AntisymmetricExpFit::fit_exponents(int c) {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Soleves the Vandermonde system to find the least squares fit of the 
-// amplitudes
+/// Solevs the Vandermonde system to find the least squares fit of the 
+/// amplitudes for a given \c k.
 //
 ///////////////////////////////////////////////////////////////////////////////
 void AntisymmetricExpFit::fit_amplitudes() {
@@ -283,10 +327,10 @@ void AntisymmetricExpFit::fit_amplitudes() {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Changes the variable of a polynomial represented in P and stores the
-// result in Q so that P(x) = Q(x') where
-//
-// x = alpha x' + (1 - alpha)
+/// Changes the variable of a polynomial represented in P and stores the
+/// result in Q so that \f$P(x) = Q(x')\f$ where
+///
+/// \f$x = \alpha x' + (1 - \alpha)\f$
 //
 ///////////////////////////////////////////////////////////////////////////////
 void AntisymmetricExpFit::change_variable(RealVector &P, const Real &alpha, RealVector &Q) {
@@ -311,8 +355,8 @@ void AntisymmetricExpFit::change_variable(RealVector &P, const Real &alpha, Real
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// finds the zeroes of P(x) in the domain a < x <= b, putting the
-// results into Z
+/// Finds the zeroes of P(x) in the domain \f$a < x <= b\f$, putting the
+/// results into Z
 //
 ///////////////////////////////////////////////////////////////////////////////
 void AntisymmetricExpFit::find_zeroes(RealVector &P, const Real &a, const Real &b, RealVector &Z) {
